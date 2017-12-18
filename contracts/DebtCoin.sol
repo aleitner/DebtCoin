@@ -30,7 +30,7 @@ contract DebtCoin is Ownable {
 
     /**
     * @dev Gets the debt of the specified address.
-    * @param _debtor The address to query the debt of.
+    * @param _debtor address The address to query the debt of.
     * @return An uint256 representing the amount owned by the passed address.
     */
     function debtOf(address _debtor) public view returns (uint256 balance) {
@@ -39,34 +39,46 @@ contract DebtCoin is Ownable {
 
     /**
     * @dev Adds debt to address
-    * @param _debtor The address acquiring debt
-    * @param _debtor The amount of debt being acquired
+    * @param _debtor address The address acquiring debt
+    * @param _debt The amount of debt being acquired
     */
     function accumulateDebt(address _debtor, uint256 _debt) public onlyOwner {
         if (_debtor == 0x0) revert();
-        if (balances[_debtor].add(_debt) < balances[_debtor]) revert(); // Check for overflows
-        balances[_debtor] = balances[_debtor].add(_debt);
+        if (debts[_debtor].add(_debt) < debts[_debtor]) revert(); // Check for overflows
+        debts[_debtor] = debts[_debtor].add(_debt);
 
         DebtAccumulated(_debtor, _debt);
     }
 
     /**
-    * @dev Adds debt to address
-    * @param _debtor The address acquiring debt
-    * @param _debtor The amount of debt being acquired
+    * @dev Pay for debt
     */
     function makePayment() public payable returns (uint256 amount) {
-        amount = msg.value
+        amount = msg.value;
 
         require(debts[msg.sender] >= amount);
 
         /* pay off debt */
-        balances[msg.sender] -= amount;
+        debts[msg.sender] -= amount;
 
         DebtAccumulated(msg.sender, amount);
 
         return amount;
     }
+
+    /**
+    * @dev Relieve debt for address
+    * @param _debtor address The address with debt
+    * @param _amount The amount of debt being relieved
+    */
+    function relieveDebt(address _debtor, uint256 _amount) public onlyOwner {
+        if (_debtor == 0x0) revert();
+        if (debts[_debtor].sub(_amount) > debts[_debtor]) revert(); // Check for overflows
+        debts[_debtor] = debts[_debtor].sub(_amount);
+
+        Payment(_debtor, _amount);
+    }
+
 
     /**
     * @dev Amount of ether to withdraw from contract in wei
