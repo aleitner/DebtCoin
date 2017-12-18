@@ -44,6 +44,7 @@ contract DebtCoin is Ownable {
     */
     function accumulateDebt(address _debtor, uint256 _debt) public onlyOwner {
         if (_debtor == 0x0) revert();
+        if (_debt <= 0) revert();
         if (debts[_debtor].add(_debt) < debts[_debtor]) revert(); // Check for overflows
         debts[_debtor] = debts[_debtor].add(_debt);
 
@@ -55,13 +56,13 @@ contract DebtCoin is Ownable {
     */
     function makePayment() public payable returns (uint256 amount) {
         amount = msg.value;
-
+        if (_amount <= 0) revert();
         require(debts[msg.sender] >= amount);
 
         /* pay off debt */
         debts[msg.sender] -= amount;
 
-        DebtAccumulated(msg.sender, amount);
+        Payment(msg.sender, amount);
 
         return amount;
     }
@@ -73,6 +74,7 @@ contract DebtCoin is Ownable {
     */
     function relieveDebt(address _debtor, uint256 _amount) public onlyOwner {
         if (_debtor == 0x0) revert();
+        if (_amount <= 0) revert();
         if (debts[_debtor].sub(_amount) > debts[_debtor]) revert(); // Check for overflows
         debts[_debtor] = debts[_debtor].sub(_amount);
 
