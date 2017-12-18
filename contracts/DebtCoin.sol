@@ -10,7 +10,7 @@ import './Ownable.sol';
 contract DebtCoin is Ownable {
     using SafeMath for uint256;
 
-    event Payment(address indexed _debtor, address indexed _creditor, uint256 _amount);
+    event Payment(address indexed _debtor, uint256 _amount);
     event DebtAccumulated(address indexed _debtor, uint256 _amount);
 
     mapping(address => uint256) debts;
@@ -18,7 +18,6 @@ contract DebtCoin is Ownable {
     string public name;
     string public symbol;
     uint256 public decimals;
-    uint256 public totalDebts;
 
     /**
     * @dev Contructor that gives msg.sender all of existing tokens.
@@ -26,7 +25,7 @@ contract DebtCoin is Ownable {
     function DebtCoin() public {
         name = "Debt Coin";
         symbol = "DTC";
-        decimals = 0;
+        decimals = 18;
     }
 
     /**
@@ -36,6 +35,37 @@ contract DebtCoin is Ownable {
     */
     function debtOf(address _debtor) public view returns (uint256 balance) {
         return debts[_debtor];
+    }
+
+    /**
+    * @dev Adds debt to address
+    * @param _debtor The address acquiring debt
+    * @param _debtor The amount of debt being acquired
+    */
+    function accumulateDebt(address _debtor, uint256 _debt) public onlyOwner {
+        if (_debtor == 0x0) revert();
+        if (balances[_debtor].add(_debt) < balances[_debtor]) revert(); // Check for overflows
+        balances[_debtor] = balances[_debtor].add(_debt);
+
+        DebtAccumulated(_debtor, _debt);
+    }
+
+    /**
+    * @dev Adds debt to address
+    * @param _debtor The address acquiring debt
+    * @param _debtor The amount of debt being acquired
+    */
+    function makePayment() public payable returns (uint256 amount) {
+        amount = msg.value
+
+        require(debts[msg.sender] >= amount);
+
+        /* pay off debt */
+        balances[msg.sender] -= amount;
+
+        DebtAccumulated(msg.sender, amount);
+
+        return amount;
     }
 
     /**
